@@ -1,0 +1,46 @@
+We are breaking all the conventions of the asp.net mvc, so we need to setup our own
+on the first step, multiple functional vertical blocks vs. one architectual multiple block
+convert whole application in small vertical blocks, easy to understand
+big crack on the BBOM
+You need to understand one vertical block, commons, some well identified class of 
+other BC if UC involve cross BC functinality
+
+=====================================================
+
+Code First DB Migrations should work new Models and ApplicationDBContext
+Routing Rules should work
+Scaffolding should work
+Specify the explicit View names in Controllers
+Make expressions for the View names and other hard coded references
+Seperating the ViewModel into their classes done
+Refering ViewModels in the Views done
+Update the Shared Views, ViewStart.cshtml,  done
+
+Set the Local DB Context of BC, Set their connection strings, Inactivate them
+in the start because initially we are going to keep DB same for all BC, 
+we will seperate them when BC will get complicated enought done
+
+Configure the path where to look for Views
+Configure the Routing Rules according to new Folder Settings
+
+
+====================================================
+
+Two Problems are mixed up
+
+1. Telling where the Views live in the Application, This information is used by Controller 
+to send ViewModel to View for Rendering.
+
+2. Specifying the Routing Rules of the Applications, This is simply Mapping 
+URLs of application to the Controller and Controller Actions. Routing Rules has 
+nothing to do with the View and their locations
+
+While Specifying the Routing Rules, for each Routing Rule specify the Namespace
+in which the correspoding Controllers live. it take array of namespace, but there
+should be only one.
+
+
+
+
+
+

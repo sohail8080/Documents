@@ -1,0 +1,281 @@
+context.MapRoute(
+                "Default_Dashboard",
+                "Dashboard/{action}/{id}",
+                new { area = "Dashboard", controller = "Dashboard", action = "PatientPortal", id = UrlParameter.Optional },
+                new[]{typeof(Controllers.DashboardController).Namespace}
+            );
+
+context.MapRoute(
+                "Default_Dashboard",
+                "{controller}/{action}/{id}",
+                new { area = "Dashboard", controller = "Dashboard", action = "PatientPortal", id = UrlParameter.Optional },
+                new[]{typeof(Controllers.DashboardController).Namespace}
+            );
+
+Here RegisterAllAreas() Method is a static method. and this RegisterAllAreas() method will call all RegisterArea() methods of  all Areas found in application. Once we add above code in Global.asax Application_Start event that will be like as shown below 
+
+
+
+
+using System.Web;
+using System.Web.Routing;
+public class RoleRouteConstraint : IRouteConstraint
+{
+  private string role= string.Empty;
+
+  public RoleRouteConstraint(string role)
+  {
+     this.role = role;
+  }
+  public bool Match(HttpContextBase httpContext, Route route, string parameterName, RouteValueDictionary values, RouteDirection routeDirection)
+  {
+    if(string.IsNullOrWhiteSpace(this.role))
+      return false;
+    return httpContext.User.IsInRole(role);
+  }
+}
+
+routes.MapRoute(
+  "Admin",
+  "Admin/{controller}/{action}",
+  new { controller = "Home", action = "Index", area ="Admin" },
+  new { isinrole= new RoleRouteConstraint("Admin")}
+);
+
+=======================================
+
+public static void RegisterRoutes(RouteCollection routes)
+        {
+            routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
+            routes.MapRoute(
+                        name: "Default",
+                        url: "{controller}/{action}/{id}",
+                        defaults: new { controller = "Home", action = "Index", id = UrlParameter.Optional },
+                        namespaces: new[] { "SmsMenu.Controllers" }
+                    );
+            routes.MapRoute(
+            "Admin",
+            "{Admins/controller}/{action}/{id}",
+            new { area = "Admins", controller = "Home", action = "Index", id = UrlParameter.Optional },
+           new { isInRoleAdmin = new RoleRouteConstraint("Admin"), isInRoleSa = new RoleRouteConstraint("sa") }
+
+          );
+            routes.MapRoute(
+             "Users",
+             "{Users/controller}/{action}/{id}",
+             new { area = "Admin", controller = "Home", action = "Index", id = UrlParameter.Optional },
+            new
+            {
+                isInRole1 = new RoleRouteConstraint("User1"),
+                isInRole2 = new RoleRouteConstraint("User2"),
+                isInRole3 = new RoleRouteConstraint("User3")
+            }
+          );
+
+
+        }
+
+===============================================
+
+
+====================================================================
+
+
+===================================================================
+
+Try install the Route Debugger nuget package it may help you see why things aren't matching
+
+=====================================
+
+This ChildSectionAreaRegistration class is inheriting from Abstract class AreaRegistration which has two method (AreaName, RegisterArea) as abstract which we are overriding in this ChildSectionAreaRegistration Class. The first method AreaName contains name of your Area ( ChildSection ) and the second method contains Routing for ChildSection Area.
+
+Registering Areas in Global.asax
+In Global.asax we need to register all Areas in Application_Start event handler by adding below code.
+
+ 
+
+AreaRegistration.RegisterAllAreas();
+
+Here RegisterAllAreas() Method is a static method. and this RegisterAllAreas() method will call all RegisterArea() methods of  all Areas found in application. Once we add above code in Global.asax Application_Start event that will be like as shown below 
+
+==========================================================
+
+
+===============================================================
+
+
+
+====================================================
+
+ routes.MapRoute("Manage_Customers", "Areas/Management/Config/Manage/{Manage}",
+                new { controller = "Config", action = "Manage", Manage = "all" });
+
+=============================================================
+
+
+==============================================================
+
+Areas are some of the most important components of ASP.NET MVC projects. The main use of Areas are to physically partition web project in separate units.  If you look into an ASP.NET MVC project, logical components like Model, Controller, and the View are kept physically in different folders, and ASP.NET MVC uses naming conventions to create the relationship between these components. Problems start when you have a relatively big application to implement. For instance, if you are implementing an E-Commerce application with multiple business units, such as Checkout, Billing, and Search etc. Each of these units have their own logical components views, controllers, and models. In this scenario, you can use ASP.NET MVC Areas to physically partition the business components in the same project.
+
+In short, an area can be defined as: Smaller functional units in an ASP.NET MVC project with its own set of controllers, views, and models.
+
+========================================================
+
+ single MVC application may have any number of Areas.  Some of the characteristics of Areas are:
+
+An MVC application can have any number of Areas.
+Each Area has its own controllers, models, and views.
+Physically, Areas are put under separate folders.
+Areas are useful in managing big web applications.
+A web application project can also use Areas from different projects.
+Using Areas, multiple developers can work on the same web application project.
+ 
+
+===============================================================
+
+RegisterAllAreas should be called before other configuration so that other settings, routing, filters, bundles can be applied on Areas as well. Get more details about ASP.NET MVC filters.
+
+Routing Engine will check all registered Areas and process browser's request. See more on ASP.NET MVC Request life cycle.
+
+========================================================
+
+public static void RegisterRoutes(RouteCollection routes)
+{
+    routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
+    AreaRegistration.RegisterAllAreas();
+    routes.MapRoute(
+        name: "Default",
+        url: "{controller}/{action}/{id}",
+        defaults: new { controller = "Home", action = "Index", id = UrlParameter.Optional },
+        namespaces: new[] { "TestMvcApplication.Controllers" }
+    );
+}
+
+==========================================
+
+How does RegisterAllAreas work?
+Let's look in the source code of AreaRegistration class. For this we will need to use a decompiler. I recommend my favorite dotPeek from JetBrains. It's 100% free and it has the same shortcuts as ReSharper.
+
+The method we are interested in is static RegisterAllAreas (there are three but actually only one does whole job).
+
+  internal static void RegisterAllAreas(
+                           RouteCollection routes,
+                           IBuildManager buildManager, object state)
+  {
+    foreach (Type type in TypeCacheUtil.GetFilteredTypesFromAssemblies(
+          "MVC-AreaRegistrationTypeCache.xml",
+          new Predicate<Type>(AreaRegistration.IsAreaRegistrationType),
+          buildManager))
+      ((AreaRegistration)Activator.CreateInstance(type))
+        .CreateContextAndRegister(routes, state);
+  }
+
+It looks like a work it does is pretty straightforward. First of all it uses TypeCacheUtil to find assemblies which contain classes that inherit from AreaRegistration class. The condition is checked in AreaRegistration.IsAreaRegistrationType (you can also notice that the class should have parameterless constructor).
+
+private static bool IsAreaRegistrationType(Type type)
+{
+  if (typeof (AreaRegistration).IsAssignableFrom(type))
+    return type.GetConstructor(Type.EmptyTypes) != (ConstructorInfo) null;
+  else
+    return false;
+}
+What is interesting, the classes which are found are stored in MVC-AreaRegistrationTypeCache.xml file. The file is located at c:\Windows\Microsoft.NET\Framework\v4.0.30319\Temporary ASP.NET Files\NAME_OF_YOUR_APP\\\UserCache\ (source: MVC-ControllerTypeCache.xml in MVC).
+
+The next step of the RegisterAllAreas method is to create an instance of each of these classes and call RegisterArea on them. This is the method that we overriden in our area and registered its routes.
+
+Solving the problem
+Let's go back to my initial problem. To remind you: the application wasn't registering routes from my new area. The only suspicious place is the xml file with cached AreaRegistration classes. Caching is very useful when it comes to performance tuning of an application, but in the same way it can bring many problems. It turned out that my new AreaRegistration class wasn't listed there. So I've deleted this file, restarted application and the problem was solved.
+
+=====================================================
+
+Inside Areas Registration (How does RegisterAllAreas work in ASP.NET MVC 4)
+Aug 17, 2013
+
+Recently I've faced the problem with registering the areas. I added new area to my application, but it didn't seem to work. In this article I'll explain how does the areas registration work under the hood and then how I solved my problem.
+
+How to create areas?
+Using Visual Studio it is pretty easy. Just select the project in Solution Explorer, right click and select Add > Area.... The folder structure is created automatically.
+
+Each area has its own class which inherits from AreaRegistration class. The purpose of this class is to register new routes (you add new controllers which will be available using new addresses - the framework has to know about that). In this model each area registers its own routes rather than all routes from all areas are registered in one place.
+
+=======================================================
+
+ using (Html.BeginForm("LogOff", "Account", new { area = "Account"}, FormMethod.Post, new { id = "logoutForm", @class = "navbar-right" }))
+ @using (Html.BeginForm("Login", "Account", new { area = "Account", ReturnUrl = ViewBag.ReturnUrl }, FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+
+   @Html.ActionLink("Hello " + User.Identity.GetUserName() + "!", "Index", "Manage",  routeValues: new { area = "Manage" }, htmlAttributes: new { title = "Manage" })
+       <li>@Html.ActionLink("Register", "Register", "Account", routeValues: new { area = "Account" }, htmlAttributes: new { id = "registerLink" })</li>
+        <li>@Html.ActionLink("Log in", "Login", "Account", routeValues: new { area = "Account" }, htmlAttributes: new { id = "loginLink" })</li>
+ @Html.ActionLink("Application name", "Index", "Home", new { area = "Home" }, new { @class = "navbar-brand" })
+@Html.ActionLink("Home", "Index", "Home", new { area = "Home" }, null)
+
+   <li>@Html.ActionLink("Home", "Index", "Home", new { area = "Home" }, null)</li>
+   <li>@Html.ActionLink("About", "About", "Home", new { area = "Home" }, null)</li>
+   <li>@Html.ActionLink("Contact", "Contact", "Home", new { area = "Home" }, null)</li>
+
+ @Html.ActionLink("Application name", "Index", "Home", new { area = "Home" }, new { @class = "navbar-brand" })
+
+  return RedirectToAction("Index", "Home", new { area = "Home" }); 
+	
+Here we will see how to create link with area in our view. We need to write action link with area after controller name just add New { area= “Area Name”} like as shown below.
+
+@Html.ActionLink("ChildRegistration Details", "Index", "ChildRegistration", new { area = "ChildSection" }, null)
+
+Our output will be like as shown below
+
+public class HomeController : Controller
+{
+public ActionResult Index()
+{
+
+if user's role is Admin
+return RedirectToAction("Index", "Admin", new { area = "Admin" });
+
+if user's role is user
+return RedirectToAction("Index", "User", new { area = "User" });
+
+}
+
+}
+
+
+<h3>You are inside main area. To navigate to some other area please click on the following links</h3>
+<%= Html.ActionLink("Main Area", "Index", "Home", new { area = "" }, null)%>
+<br /><br />
+<%= Html.ActionLink("Blog Area", "Index", "Home", new { area = "Blog" }, null)%>
+<br /><br />
+<%= Html.ActionLink("Help Desk Area", "Index", "Home", new { area = "HelpDesk" }, null)%>
+<br /><br />
+<%= Html.ActionLink("Shopping Area", "Index", "Home", new { area = "Shopping" }, null)%>
+
+@Html.ActionLink("Blog Home", "Index", "Home", new { area = "Blog" }, null)
+@Html.ActionLink("ChildRegistration Details", "Index", "ChildRegistration", new { area = "ChildSection" }, null)
+@Html.ActionLink("BillingMain", "Index", new { Area = "Billing" })
+Redirecting to an Action Belonging to Another Area
+You can also redirect to some action method of a specific area using RedirectToAction() method. Consider the following action method:
+
+public ActionResult Index()
+{
+    return RedirectToAction("Index", "Home", new { Area = "HelpDesk" });
+}
+=============================================================
+public class ProductController : Controller
+{
+    public ActionResult Index()
+    {
+        return this.View(@"~\CustomDirectory\Index.aspx");
+    }
+}
+
+===============================================
+
+Replace all the HTML.ActionLink in whole application
+
+Replace RedirectToAction( in whole application, only left those 
+do not specify the Controller and call the same controller
+
+Defined the Routing Roles in Areas and as well as in the RoutingConfig file
+Both are working, But i think Area Approch is better becase we need
+this for the Links to work. other wise i think lines will not work. i am not sure about this
+
+We can define have 2 areas in one folder and then 1 area outside folder.

@@ -1,0 +1,103 @@
+update-database –configuration CleanArchTemplate.Common.Migrations.Configuration
+
+Following Command is working
+add-migration InitialModel –configuration CleanArchTemplate.Common.Migrations.Configuration
+
+Following Commands Not Working. 
+Add-migration –configuration Console.App.EmployeeContextMigrations.Configuration "migration name"
+
+Add-Migration InitialModel -ContextTypeName CleanArchTemplate.Common.UOW.ApplicationDbContext -MigrationsDirectory Common\Migrations
+Add-Migration InitialCreate -Context MyDbContext -OutputDir Migrations\SqlServerMigrations
+Add-Migration InitialCreate -Context MySqliteDbContext -OutputDir Migrations\SqliteMigrations
+
+dotnet ef migrations add InitialCreate --context MyDbContext --output-dir Migrations/SqlServerMigrations
+dotnet ef migrations add InitialCreate --context MySqliteDbContext --output-dir Migrations/SqliteMigrations
+
+OK
+Add-Migration [-Name] <String> [-OutputDir <String>] [-Context <String>] [-Project <String>] 
+                    [-StartupProject <String>] [<CommonParameters>]
+
+OK
+Remove-Migration [-Force] [-Context <String>] [-Project <String>] [-StartupProject <String>] 
+                        [<CommonParameters>]
+
+OK
+Update-Database [[-Migration] <String>] [-Context <String>] [-Project <String>] 
+                        [-StartupProject <String>] [<CommonParameters>]
+
+ Script-Migration [-From] <String> [-To] <String> [-Idempotent] [-Output <String>] 
+                        [-Context <String>] [-Project <String>] [-StartupProject <String>] 
+                        [<CommonParameters>]
+    
+    Script-Migration [[-From] <String>] [-Idempotent] [-Output <String>] [-Context <String>] 
+                        [-Project <String>] [-StartupProject <String>] [<CommonParameters>]
+
+Add-migration –configuration Console.App.EmployeeContextMigrations.Configuration "migration name" 
+
+
+=========================================
+dotnet ef  migrations add Initial --context EsportshubApi.Models.ApplicationDbContext
+dotnet ef  migrations add Initial --context EsportshubApi.Models.ApplicationDbContext -o YourFolderPath
+PM> Add-Migration 001 -OutputDir "Data/Migrations"
+dotnet ef  migrations add DbInitial --context SampleAPi.Infrastructure.DbContext -o Infrastructure/Migrations
+dotnet ef database update
+
+====================================
+
+Scaffold a migrations configuration for a project with multiple contexts
+# This scaffolds a migrations configuration for MyContext and will put the configuration
+# and subsequent configurations in a new directory called "DirectoryName"
+
+Enable-Migrations -MigrationsDirectory Data\Migrations
+
+Enable-Migrations -ContextTypeName SampleAPi.Infrastructure.DbContext -MigrationsDirectory Data\Migrations
+
+Enable-migration –ContextTypeName:ConsoleApp.EmployeeContext 
+–MigrationDirectory:EmployeeContextMigrations 
+
+enable-migrations -ContextProjectName DAL -ContextTypeName Context -ProjectName DAL
+
+Add-migration –configuration Console.App.EmployeeContextMigrations.Configuration "migration name"
+
+above command generate following line in the migrtion class
+
+public Configuration()
+{
+    AutomaticMigrationsEnabled = false;
+    MigrationsDirectory = @"Data\Migrations";
+}
+
+From now on, every time I add a new migration, 
+this will be added to the Data\Migrations folder. 
+I like to have a clean root project folder.
+
+Just one note: if you already have the Migrations folder in your root, 
+and you wish to have a new location, I suggest to do it manually, 
+moving all the content of the current migrations folder to the new location. 
+Do not foget to change the Configuration constructor as well, setting the 
+MigrationsDirectory property with the new location.
+
+Enable-Migrations [-ContextTypeName <String>] [-EnableAutomaticMigrations] 
+  [-MigrationsDirectory <String>] [-ProjectName <String>] [-StartUpProjectName <String>] 
+  [-ContextProjectName <String>] [-ConnectionStringName <String>] [-Force] 
+  [-ContextAssemblyName <String>] [-AppDomainBaseDirectory <String>] [<CommonParameters>]
+ 
+Enable-Migrations [-ContextTypeName <String>] [-EnableAutomaticMigrations] 
+  [-MigrationsDirectory <String>] [-ProjectName <String>] [-StartUpProjectName <String>]
+  [-ContextProjectName <String>] -ConnectionString <String> 
+  -ConnectionProviderName <String> [-Force] [-ContextAssemblyName <String>] 
+  [-AppDomainBaseDirectory <String>] [<CommonParameters>]
+
+
+To see the examples, type: get-help Enable-Migrations -examples.
+For more information, type: get-help Enable-Migrations -detailed.
+For technical information, type: get-help Enable-Migrations -full.
+
+Additional Information
+The flag for enabling automatic migrations is saved in the Migrations\Configuration.cs file, in the constructor. To later change the option, just change the assignment in the file.
+
+public Configuration()
+{
+    AutomaticMigrationsEnabled = false;
+}
+
