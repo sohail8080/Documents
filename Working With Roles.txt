@@ -1,0 +1,112 @@
+[AllowAnonymous]
+[Route("users/{id:guid}/roles")]
+[HttpPut]
+public async Task<IHttpActionResult> AssignRolesToUser(string id, string[] rolesToAssign)
+{
+    if (rolesToAssign == null)
+    {
+        return this.BadRequest("No roles specified");
+    }
+
+    ///find the user we want to assign roles to
+    var appUser = await this.UserManager.FindByIdAsync(id);
+
+    if (appUser == null || appUser.IsDeleted)
+    {
+        return NotFound();
+    }
+
+    ///check if the user currently has any roles
+    var currentRoles = await this.UserManager.GetRolesAsync(appUser.Id);
+
+
+    var rolesNotExist = rolesToAssign.Except(this.RoleManager.Roles.Select(x => x.Name)).ToArray();
+
+    if (rolesNotExist.Count() > 0)
+    {
+        ModelState.AddModelError("", string.Format("Roles '{0}' does not exist in the system", string.Join(",", rolesNotExist)));
+        return this.BadRequest(ModelState);
+    }
+
+    ///remove user from current roles, if any
+    IdentityResult removeResult = await this.UserManager.RemoveFromRolesAsync(appUser.Id, currentRoles.ToArray());
+
+
+    if (!removeResult.Succeeded)
+    {
+        ModelState.AddModelError("", "Failed to remove user roles");
+        return BadRequest(ModelState);
+    }
+
+    ///assign user to the new roles
+    IdentityResult addResult = await this.UserManager.AddToRolesAsync(appUser.Id, rolesToAssign);
+
+    if (!addResult.Succeeded)
+    {
+        ModelState.AddModelError("", "Failed to add user roles");
+        return BadRequest(ModelState);
+    }
+
+    return Ok(new { userId = id, rolesAssigned = rolesToAssign });
+}
+csharp
+The route for our new endpoint will be users/{id:guid}/roles. An ID and an array of roles should be the request parameters.
+
+Finally, make an instance of our ApplicationRoleManager. To do this, add this code snippet in the AccountController
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+public class AccountController : ApiController
+{
+    ///...
+    private ApplicationRoleManager _roleManager;
+    ///...
+    public AccountController(ApplicationUserManager userManager,
+        ISecureDataFormat<AuthenticationTicket> accessTokenFormat, ApplicationRoleManager roleManager)
+    {
+    ///Make an instance of the user manager in the controller to avoid null reference exception
+        UserManager = userManager;
+        AccessTokenFormat = accessTokenFormat;
+        ///Make an instance of the role manager in the constructor to avoid null reference exception
+        RoleManager = roleManager;
+    }
+///...
+    public ApplicationRoleManager RoleManager
+    {
+        get
+        {
+            return _roleManager ?? Request.GetOwinContext().GetUserManager<ApplicationRoleManager>();
+        }
+        private set
+        {
+            _roleManager = value;
+        }
+    }
+/// Rest of the class...
+}

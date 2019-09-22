@@ -1,0 +1,294 @@
+@using Microsoft.AspNet.Identity.Owin;
+@using Microsoft.AspNet.Identity;
+@using System.Web;
+@{
+    bool isAdminUser = false; // this variable is accessible in child Views
+    var userManager = this.Context.GetOwinContext().GetUserManager<ApplicationUserManager>();
+    var user = User.Identity.GetUserId();
+    if (user != null)
+    {
+        var userRoles = userManager.GetRoles(User.Identity.GetUserId());
+        if (userRoles == null | userRoles.Count <= 0)
+        { isAdminUser = false; }
+
+        if (userRoles[0].ToString() == "Admin")
+        { isAdminUser = true; }
+        else
+        { isAdminUser = false; }
+    }
+======================================================================
+
+In Razor View
+var userManager = this.Context.GetOwinContext().GetUserManager<ApplicationUserManager>();
+
+==========================================================================
+
+                @*@if (ViewBag.displayMenu != null && ViewBag.displayMenu == "Yes")
+                {
+                    <li>@Html.ActionLink("Admin", "Index", "Users", routeValues: new { area = "Manage" }, htmlAttributes: new { id = "adminLink" })</li>
+                }*@
+
+
+                @*Logging Off, deos not expire the session, there for following is not
+        Working as expected.*@
+
+                @*@if (Session["IsAdmin"] != null && Boolean.Parse(Session["IsAdmin"].ToString()))
+        {
+            <li>@Html.ActionLink("Admin", "Index", "Users", routeValues: new { area = "Manage" }, htmlAttributes: new { id = "adminLink" })</li>
+        }*@
+
+===================================================
+In Controller
+
+User.Identity.IsAuthenticated
+
+===================================================
+
+            //if (User.Identity.IsAuthenticated)
+            //{
+            //    if (!isAdminUser())
+            //    {
+            //        return RedirectToAction("Index", "Home", new { area = "Home" });
+            //    }
+            //}
+            //else
+            //{
+            //    return RedirectToAction("Index", "Home", new { area = "Home" });
+            //}
+
+===================================================
+
+        //private Boolean isAdminUser()
+        //{
+        //    if (User.Identity.IsAuthenticated)
+        //    {
+        //        var user = User.Identity;
+        //        //var UserManager = new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(context));
+        //        var userRoles = UserManager.GetRoles(user.GetUserId());
+
+        //        if (userRoles == null | userRoles.Count <= 0)
+        //            return false;
+
+        //        if (userRoles[0].ToString() == "Admin")
+        //        {
+        //            return true;
+        //        }
+        //        else
+        //        {
+        //            return false;
+        //        }
+        //    }
+        //    return false;
+        //}
+
+===========================================================
+  //      private Boolean isAdminUser()
+		//{
+		//	if (User.Identity.IsAuthenticated)
+		//	{
+		//		var user = User.Identity;
+		//		//ApplicationDbContext context = new ApplicationDbContext();
+		//		//var UserManager = new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(context));
+		//		var userRoles = UserManager.GetRoles(user.GetUserId());
+
+  //              if (userRoles == null | userRoles.Count <= 0)
+  //                  return false;
+
+		//		if (userRoles[0].ToString() == "Admin")
+		//		{
+		//			return true;
+		//		}
+		//		else
+		//		{
+		//			return false;
+		//		}
+		//	}
+		//	return false;
+		//}
+
+
+=========================================================
+
+        // Two App. Service used for Account Management
+        private ApplicationSignInManager _signInManager;
+        private ApplicationUserManager _userManager;
+        //ApplicationDbContext context;
+
+        public RolesController()
+        {
+            //context = new ApplicationDbContext();
+        }
+
+
+
+        // Controller is not getting these properties by DI/IOC
+        public ApplicationSignInManager SignInManager
+        {
+            get
+            {
+                return _signInManager ?? HttpContext.GetOwinContext().Get<ApplicationSignInManager>();
+            }
+            private set
+            {
+                _signInManager = value;
+            }
+        }
+
+        // Controller is not getting these properties by DI/IOC
+        public ApplicationUserManager UserManager
+        {
+            get
+            {
+                return _userManager ?? HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
+            }
+            private set
+            {
+                _userManager = value;
+            }
+        }
+
+=========================================================
+
+
+			//if (User.Identity.IsAuthenticated)
+			//{
+			//	var user = User.Identity;
+			//	ViewBag.Name = user.Name;
+				
+   //             //	ApplicationDbContext context = new ApplicationDbContext();
+			//	//	var UserManager = new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(context));
+			//	//var s=	UserManager.GetRoles(user.GetUserId());
+
+			//	ViewBag.displayMenu = "No";
+
+			//	if (isAdminUser())
+			//	{
+			//		ViewBag.displayMenu = "Yes";
+			//	}
+			//	return View("Index");
+			//}
+			//else
+			//{
+			//	ViewBag.Name = "Not Logged IN";
+			//}
+
+=======================================================
+
+        [AllowAnonymous]
+        public ActionResult Index()
+        {
+
+            ViewBag.displayMenu = "No";
+
+            if (isAdminUser())
+            {
+                ViewBag.displayMenu = "Yes";
+            }
+
+            return View("Index");
+        }
+
+==================================================
+
+
+  public Boolean isAdminUser()
+        {
+            if (User.Identity.IsAuthenticated)
+            {
+                var user = User.Identity;
+                ApplicationDbContext context = new ApplicationDbContext();
+                var UserManager = new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(context));
+                var s = UserManager.GetRoles(user.GetUserId());
+
+                if (s == null | s.Count <= 0)
+                    return false;
+
+                if (s[0].ToString() == "Admin")
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            return false;
+        }
+
+=====================================================
+
+public async string GetUserRole(string EmailID, string Password)
+{
+    var user = await _userManager.FindAsync(EmailID, Password);
+    string rolename = await _userManager.GetRoles(user.Id).FirstOrDefault();
+    return rolename;
+}
+
+====================================================
+
+            //var userManager = new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(new ApplicationDbContext()));
+            //var signInManager = HttpContext.GetOwinContext().Get<ApplicationSignInManager>();            
+            //var roleManager = Request.GetOwinContext().Get<RoleManager<IdentityRole>>();
+
+
+====================================================================
+
+            //    if (User.Identity.IsAuthenticated)
+            //{
+            //    if (!isAdminUser())
+            //    {
+            //        return RedirectToAction("Index", "Home", new { area = "Home" });
+            //    }
+            //}
+            //else
+            //{
+            //    return RedirectToAction("Index", "Home", new { area = "Home" });
+            //}
+
+====================================================
+
+                   ////////////////////////// Check User is Admin or Not : Set Session Variable ///////////////                    
+
+
+                    //Logging Off, deos not expire the session, there for following is not
+                    //Working as expected.
+                    //var user = await UserManager.FindAsync(model.Email, model.Password);
+                    //var roles = await UserManager.GetRolesAsync(user.Id);
+                    //if (roles != null && roles.Count >=1)
+                    //{
+                    //    if (roles.Contains("Admin"))
+                    //        Session["IsAdmin"] = true;
+                    //}
+
+                    ////////////////////////// Check User is Admin or Not : Set Session Variable ///////////////
+
+            // Following is the Startup code, this should be executed when the 
+            // Application first starts and add Roles to the Application
+            // This can be done in Configuration Method of Code First Migration
+            // This can be done when Application DB is migrated and Ref data is added
+            // Find place in MVC Framework, Code that exectues only once.
+            var roleStore = new RoleStore<IdentityRole>(new ApplicationDbContext());// Repo Role Class
+            var roleManager = new RoleManager<IdentityRole>(roleStore); // Creat Role Service
+            if (!roleManager.RoleExists("Customer"))
+            {
+                roleManager.Create(new IdentityRole("Customer")); // Create Role in DB                        
+            }
+
+====================================================
+
+                    // Temp code to Create User with Role, Role, UserRole
+                    //var roleStore = new RoleStore<IdentityRole>(new ApplicationDbContext());// Repo Role Class
+                    //var roleManager = new RoleManager<IdentityRole>(roleStore); // Creat Role Service
+                    //await roleManager.CreateAsync(new IdentityRole("Admin")); // Create Role in DB
+                    //await UserManager.AddToRoleAsync(user.Id, "Admin"); // Add UserRole in DB
+
+===========================================
+
+                    // When User Registers, he is an Customer
+                    //Logging Off, deos not expire the session, there for following is not
+                    //Working as expected.
+                    //Session["IsAdmin"] = false;
+
+============================================
+
+
